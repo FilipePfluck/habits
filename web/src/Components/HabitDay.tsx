@@ -24,17 +24,22 @@ export const HabitDay = ({
 }: HabitDayProps) => {
   const [habits, setHabits] = useState<Habit[]>([])
   const [completedHabitsIds, setCompletedHabitsIds] = useState<string[]>([])
-  const [allHabitsHaveBeenUnChecked, setAllHabitsHaveBeenUnchecked] =
-    useState(false)
 
-  const completedAmount =
-    completedHabitsIds.length > 0 ? completedHabitsIds.length : completed
-  const totalAmount = habits.length > 0 ? habits.length : amount
+  const [totalAmount, setTotalAmount] = useState(amount)
+  const [completedAmount, setCompletedAmount] = useState(completed)
 
   const completedPercentage =
-    amount > 0 && !allHabitsHaveBeenUnChecked
-      ? Math.round((completedAmount / totalAmount) * 100)
-      : 0
+    totalAmount > 0 ? Math.round((completedAmount / totalAmount) * 100) : 0
+
+  if (dayjs(date).isSame(dayjs(), 'day')) {
+    console.log({
+      amount,
+      completed,
+      totalAmount,
+      completedAmount,
+      completedPercentage,
+    })
+  }
 
   const dayAndMonth = dayjs(date).format('DD/MM')
   const dayOfWeek = dayjs(date).format('dddd')
@@ -44,24 +49,24 @@ export const HabitDay = ({
 
     if (data.completedHabits) {
       setCompletedHabitsIds(data.completedHabits)
+      setCompletedAmount(data.completedHabits.length)
     }
 
     setHabits(data.possibleHabits)
+    setTotalAmount(data.possibleHabits.length)
   }
 
   const toggleHabit = async (id: string, checked: boolean) => {
     await api.patch(`/habits/${id}/toggle`)
 
     if (checked) {
-      if (completedHabitsIds.length === 0) setAllHabitsHaveBeenUnchecked(false)
-
       setCompletedHabitsIds((state) => [...state, id])
+      setCompletedAmount((state) => state + 1)
     } else {
-      if (completedHabitsIds.length === 1) setAllHabitsHaveBeenUnchecked(true)
-
       setCompletedHabitsIds((state) =>
         state.filter((completedHabitId) => completedHabitId !== id),
       )
+      setCompletedAmount((state) => state - 1)
     }
   }
 
@@ -84,7 +89,10 @@ export const HabitDay = ({
       />
 
       <Popover.Portal>
-        <Popover.Content className="min-w-[320px] p-6 rounded-2xl bg-zinc-900 flex flex-col">
+        <Popover.Content
+          side="right"
+          className="min-w-[320px] p-6 rounded-2xl bg-zinc-900 flex flex-col"
+        >
           <span className="font-semibold text-zinc-400">{dayOfWeek}</span>
           <span className="mt-1 font-extrabold leading-tight text-3xl">
             {dayAndMonth}
